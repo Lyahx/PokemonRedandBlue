@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/PalletTown.unity
     guid: e77065bb1484a2a45b8578cac0d84119
+  - enabled: 1
+    path: Assets/Scenes/Route1.unity
+    guid: 1047b42f0f681f24ca360164c5d7a16a
   m_configObjects: {}

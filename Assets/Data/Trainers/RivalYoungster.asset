@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 984f0b2724771224ba73b77d5352fec9, type: 3}
+  m_Name: RivalYoungster
+  m_EditorClassIdentifier: Assembly-CSharp::PokeRed.Battle.TrainerData
+  trainerName: "Gen\xE7 Rakip"
+  prizeMoneyPerLevel: 20
+  sprite: {fileID: 0}
+  preBattleLines:
+  - "Hey! Sen de mi yola \xE7\u0131k\u0131yorsun?"
+  - "O zaman \xF6nce beni yenmen gerekiyor!"
+  lossLines:
+  - "Ha! Hen\xFCz haz\u0131r de\u011Filmi\u015Fsin, \xE7\u0131rak!"
+  defeatedByLines:
+  - "Hmph, \u015Fansl\u0131yd\u0131n sadece."
+  - "Bir dahaki sefere haz\u0131r olaca\u011F\u0131m!"
+  party:
+  - species: {fileID: 11400000, guid: efb5153a4ee272441891d37088444d97, type: 2}
+    level: 3
+  - species: {fileID: 11400000, guid: b810ea8e048429d41a31f3cbb4706d7c, type: 2}
+    level: 3
