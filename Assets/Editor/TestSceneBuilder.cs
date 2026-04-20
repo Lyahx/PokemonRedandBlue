@@ -461,40 +461,53 @@ namespace PokeRed.EditorTools
 
         private static Sprite GetOrCreateSquareSprite(string name, Color color)
         {
-            string path = $"{SpritesDir}/{name}.png";
+            // Store each sprite as a proper .asset file with its texture as a sub-asset.
+            // This side-steps the PNG → TextureImporter pipeline entirely, which under
+            // Unity 6 would sometimes return a null Sprite from LoadAssetAtPath during
+            // the same editor tick as the import, leaving m_Sprite serialised as fileID:0.
+            string assetPath = $"{SpritesDir}/{name}.asset";
 
-            // Regenerate the PNG every build so rebuilds stay in sync with code changes.
-            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+            var existingSprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            var existingTex    = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+
+            // If the asset already holds a Sprite, reuse it.
+            if (existingSprite != null && existingTex != null)
+                return existingSprite;
+
+            // Build a fresh 16x16 texture of the requested colour.
+            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false)
+            {
+                name = name + "_tex",
+                filterMode = FilterMode.Point,
+                wrapMode   = TextureWrapMode.Clamp,
+                alphaIsTransparency = true
+            };
             var pixels = new Color[16 * 16];
             for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
             tex.SetPixels(pixels);
             tex.Apply();
-            File.WriteAllBytes(path, tex.EncodeToPNG());
-            Object.DestroyImmediate(tex);
 
-            // Force a synchronous import so the importer is ready before we configure it.
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
+            sprite.name = name;
 
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            if (imp != null)
+            if (File.Exists(assetPath)) AssetDatabase.DeleteAsset(assetPath);
+
+            // Texture is the main asset so it's reachable independently; Sprite is embedded.
+            AssetDatabase.CreateAsset(tex, assetPath);
+            AssetDatabase.AddObjectToAsset(sprite, assetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+            var loaded = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            if (loaded == null)
             {
-                imp.textureType           = TextureImporterType.Sprite;
-                imp.spritePixelsPerUnit   = 16;
-                imp.filterMode            = FilterMode.Point;
-                imp.textureCompression    = TextureImporterCompression.Uncompressed;
-                imp.mipmapEnabled         = false;
-                imp.isReadable            = false;
-                imp.alphaIsTransparency   = true;
-                imp.SaveAndReimport();
+                // Fallback: search through all sub-assets explicitly.
+                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+                    if (o is Sprite s) { loaded = s; break; }
             }
-
-            // Reimport once more with the new Sprite settings, synchronously.
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (sprite == null)
-                Debug.LogError($"[PokeRed] Sprite load failed at {path}. SpriteRenderer will be empty.");
-            return sprite;
+            if (loaded == null)
+                Debug.LogError($"[PokeRed] Sprite asset failed to load at {assetPath}!");
+            return loaded;
         }
 
         // ---------- Infra ----------
