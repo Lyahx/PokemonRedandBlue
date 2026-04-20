@@ -1,23 +1,35 @@
 using PokeRed.Core;
+using PokeRed.Items;
 using PokeRed.Pokemon;
+using PokeRed.Save;
 using UnityEngine;
 
 namespace PokeRed.DebugTools
 {
     /// <summary>
-    /// Editor/playtest helper: places a runtime-created test Pokemon into the
-    /// player's party so battles can be exercised without authoring SOs yet.
-    /// Replace by real ScriptableObject data as soon as assets are available.
+    /// Editor/playtest helper: places a starter Pokemon into the player's party
+    /// and stocks the bag with a few test items so battles + catching can be
+    /// exercised without a full intro flow. Prefers assets from the
+    /// PokemonDataRegistry if one is assigned, otherwise falls back to
+    /// runtime-generated placeholders.
     /// </summary>
     public class DebugBootstrap : MonoBehaviour
     {
         [SerializeField] private bool addTestParty = true;
         [SerializeField] private int  startingLevel = 7;
+        [SerializeField] private PokemonDataRegistry registry;
 
         private void Start()
         {
             if (GameManager.Instance == null || !addTestParty) return;
             if (GameManager.Instance.PlayerParty.Count > 0) return;
+
+            if (registry == null) registry = Resources.Load<PokemonDataRegistry>("PokemonDataRegistry");
+            if (registry != null && registry.species.Count > 0)
+            {
+                SeedFromRegistry();
+                return;
+            }
 
             var tackle  = CreateMove("Tackle",  PokemonType.Normal,   MoveCategory.Physical, 40, 100, 35);
             var ember   = CreateMove("Ember",   PokemonType.Fire,     MoveCategory.Special,  40, 100, 25);
@@ -34,6 +46,21 @@ namespace PokeRed.DebugTools
             var mon = PokemonInstance.Create(species, startingLevel);
             mon.nickname = "Test";
             GameManager.Instance.PlayerParty.Add(mon);
+        }
+
+        private void SeedFromRegistry()
+        {
+            var species = registry.species[0];
+            var mon = PokemonInstance.Create(species, startingLevel);
+            GameManager.Instance.PlayerParty.Add(mon);
+
+            // Give the player a couple of test items if the registry has them.
+            foreach (var item in registry.items)
+            {
+                if (item == null) continue;
+                if (item.category == ItemCategory.Ball)   GameManager.Instance.Bag.Add(item, 5);
+                if (item.category == ItemCategory.Potion) GameManager.Instance.Bag.Add(item, 3);
+            }
         }
 
         private static MoveData CreateMove(string name, PokemonType type, MoveCategory cat, int power, int acc, int pp)

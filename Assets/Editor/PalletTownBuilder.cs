@@ -105,8 +105,10 @@ namespace PokeRed.EditorTools
 
             // ---------- Debug helpers ----------
             var dbg = new GameObject("Debug");
-            dbg.AddComponent<DebugBootstrap>();
+            var bootstrap = dbg.AddComponent<DebugBootstrap>();
             dbg.AddComponent<BattleTrigger>();
+            var registry = AssetDatabase.LoadAssetAtPath<PokeRed.Save.PokemonDataRegistry>("Assets/Data/PokemonDataRegistry.asset");
+            if (registry != null) SetField(bootstrap, "registry", registry);
 
             EditorSceneManager.MarkAllScenesDirty();
             EditorSceneManager.SaveScene(scene, ScenePath);

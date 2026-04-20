@@ -326,11 +326,28 @@ namespace PokeRed.EditorTools
                 movePPLabels[i] = CreateText(moveButtons[i].transform, "PP", new Vector2(0.55f, 0.05f), new Vector2(0.98f, 0.45f), Vector2.zero, Vector2.zero, "", 16, TextAlignmentOptions.MidlineRight);
             }
 
+            // Bag menu — vertical list of 4 item rows + back button
+            var bagMenu = CreatePanel("BagMenu", root.transform, new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.45f), new Color(0, 0, 0, 0.88f));
+            var bagItemButtons = new Button[4];
+            var bagItemLabels  = new TMP_Text[4];
+            for (int i = 0; i < 4; i++)
+            {
+                float yTop = 0.95f - i * 0.17f;
+                float yBot = yTop - 0.15f;
+                bagItemButtons[i] = CreateButton(bagMenu.transform, $"BagItem{i}",
+                    new Vector2(0.05f, yBot), new Vector2(0.75f, yTop), "-");
+                bagItemLabels[i] = bagItemButtons[i].GetComponentInChildren<TMP_Text>();
+                bagItemLabels[i].alignment = TextAlignmentOptions.MidlineLeft;
+            }
+            var bagBackButton = CreateButton(bagMenu.transform, "BagBack",
+                new Vector2(0.78f, 0.05f), new Vector2(0.97f, 0.25f), "BACK");
+
             var battleUi = canvasGO.AddComponent<BattleUI>();
             SetField(battleUi, "battleRoot",    root);
             SetField(battleUi, "messagePanel",  messagePanel);
             SetField(battleUi, "actionMenu",    actionMenu);
             SetField(battleUi, "moveMenu",      moveMenu);
+            SetField(battleUi, "bagMenu",       bagMenu);
             SetField(battleUi, "messageLabel",  messageLabel);
             SetField(battleUi, "playerName",    playerName);
             SetField(battleUi, "playerLevel",   playerLevel);
@@ -343,9 +360,12 @@ namespace PokeRed.EditorTools
             SetField(battleUi, "bagButton",     bagButton);
             SetField(battleUi, "partyButton",   partyButton);
             SetField(battleUi, "runButton",     runButton);
-            SetArray(battleUi, "moveButtons",  moveButtons);
-            SetArray(battleUi, "moveLabels",   moveLabels);
-            SetArray(battleUi, "movePPLabels", movePPLabels);
+            SetField(battleUi, "bagBackButton", bagBackButton);
+            SetArray(battleUi, "moveButtons",    moveButtons);
+            SetArray(battleUi, "moveLabels",     moveLabels);
+            SetArray(battleUi, "movePPLabels",   movePPLabels);
+            SetArray(battleUi, "bagItemButtons", bagItemButtons);
+            SetArray(battleUi, "bagItemLabels",  bagItemLabels);
             root.SetActive(false);
             return battleUi;
         }

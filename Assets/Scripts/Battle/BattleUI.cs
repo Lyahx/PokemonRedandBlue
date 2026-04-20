@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using PokeRed.Core;
+using PokeRed.Items;
 using PokeRed.Pokemon;
 using TMPro;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace PokeRed.Battle
         [SerializeField] private GameObject messagePanel;
         [SerializeField] private GameObject actionMenu;
         [SerializeField] private GameObject moveMenu;
+        [SerializeField] private GameObject bagMenu;
 
         [Header("Message")]
         [SerializeField] private TMP_Text messageLabel;
@@ -44,8 +46,14 @@ namespace PokeRed.Battle
         [SerializeField] private Button partyButton;
         [SerializeField] private Button runButton;
 
+        [Header("Bag buttons")]
+        [SerializeField] private Button[]   bagItemButtons  = new Button[4];
+        [SerializeField] private TMP_Text[] bagItemLabels   = new TMP_Text[4];
+        [SerializeField] private Button     bagBackButton;
+
         private int? actionChoice;      // 0 fight, 1 bag, 2 party, 3 run
         private int? moveChoice;        // 0..3
+        private int? bagChoice;         // index into filtered bag list, -1 for back
         private bool continueRequested;
 
         private void Awake()
@@ -62,6 +70,14 @@ namespace PokeRed.Battle
                 if (moveButtons[i] != null)
                     moveButtons[i].onClick.AddListener(() => moveChoice = idx);
             }
+
+            for (int i = 0; i < bagItemButtons.Length; i++)
+            {
+                int idx = i;
+                if (bagItemButtons[i] != null)
+                    bagItemButtons[i].onClick.AddListener(() => bagChoice = idx);
+            }
+            if (bagBackButton != null) bagBackButton.onClick.AddListener(() => bagChoice = -1);
         }
 
         private void Update()
@@ -77,6 +93,7 @@ namespace PokeRed.Battle
             if (messagePanel) messagePanel.SetActive(false);
             if (actionMenu)   actionMenu.SetActive(false);
             if (moveMenu)     moveMenu.SetActive(false);
+            if (bagMenu)      bagMenu.SetActive(false);
         }
 
         private void Show(GameObject go, bool v) { if (go != null) go.SetActive(v); }
@@ -167,6 +184,7 @@ namespace PokeRed.Battle
                 Show(messagePanel, false);
                 Show(actionMenu, true);
                 Show(moveMenu, false);
+                Show(bagMenu, false);
                 actionChoice = null;
                 while (actionChoice == null) yield return null;
 
@@ -178,8 +196,11 @@ namespace PokeRed.Battle
                         yield return PickMove(active, a => { moveAction = a; picked = true; });
                         if (picked) { onChoice(moveAction); yield break; }
                         break;
-                    case 1: // Bag - not yet implemented
-                        yield return ShowMessage("Bag is empty!");
+                    case 1: // Bag
+                        var bagAction = new BattleAction();
+                        bool itemPicked = false;
+                        yield return PickBagItem(a => { bagAction = a; itemPicked = true; });
+                        if (itemPicked) { onChoice(bagAction); yield break; }
                         break;
                     case 2: // Party - not yet implemented
                         yield return ShowMessage("Switching not implemented yet.");
@@ -189,6 +210,55 @@ namespace PokeRed.Battle
                         yield break;
                 }
             }
+        }
+
+        private IEnumerator PickBagItem(Action<BattleAction> onChoice)
+        {
+            if (bagMenu == null || GameManager.Instance == null)
+            {
+                yield return ShowMessage("Bag is empty!");
+                yield break;
+            }
+
+            var bag = GameManager.Instance.Bag;
+            // Flatten non-empty slots into a display list capped at the button count.
+            var visible = new System.Collections.Generic.List<InventorySlot>();
+            foreach (var slot in bag.slots)
+                if (slot.item != null && slot.count > 0) visible.Add(slot);
+
+            if (visible.Count == 0)
+            {
+                yield return ShowMessage("Bag is empty!");
+                yield break;
+            }
+
+            Show(actionMenu, false);
+            Show(bagMenu, true);
+
+            for (int i = 0; i < bagItemButtons.Length; i++)
+            {
+                bool has = i < visible.Count;
+                if (bagItemButtons[i] != null) bagItemButtons[i].interactable = has;
+                if (bagItemLabels[i]  != null) bagItemLabels[i].text =
+                    has ? $"{visible[i].item.itemName}  x{visible[i].count}" : "-";
+            }
+
+            bagChoice = null;
+            while (bagChoice == null)
+            {
+                if (InputReader.Cancel) { bagChoice = -1; break; }
+                yield return null;
+            }
+
+            Show(bagMenu, false);
+
+            if (bagChoice.Value < 0 || bagChoice.Value >= visible.Count) yield break; // Back / cancel
+
+            onChoice(new BattleAction
+            {
+                type = BattleActionType.UseItem,
+                item = visible[bagChoice.Value].item
+            });
         }
 
         private IEnumerator PickMove(PokemonInstance active, Action<BattleAction> onChoice)
