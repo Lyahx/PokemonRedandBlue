@@ -44,8 +44,8 @@ namespace PokeRed.Dialogue
             {
                 current = queue.Dequeue();
                 yield return TypeLine(current);
-                // Wait for input
-                while (!InputReader.Interact) yield return null;
+                // Wait for input (keyboard OR left-click as a focus-loss fallback)
+                while (!InputReader.Interact && !Input.GetMouseButtonDown(0)) yield return null;
             }
             End();
         }
@@ -57,7 +57,7 @@ namespace PokeRed.Dialogue
             float charInterval = 1f / Mathf.Max(1f, charsPerSecond);
             for (int i = 0; i < line.Length; i++)
             {
-                if (InputReader.Interact) { box.SetText(line); break; }
+                if (InputReader.Interact || Input.GetMouseButtonDown(0)) { box.SetText(line); break; }
                 box.SetText(line.Substring(0, i + 1));
                 yield return new WaitForSeconds(charInterval);
             }

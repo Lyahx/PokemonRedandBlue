@@ -67,6 +67,8 @@ namespace PokeRed.Battle
         private void Update()
         {
             if (InputReader.Interact) continueRequested = true;
+            // Mouse click anywhere advances messages too (fallback when Game view loses keyboard focus).
+            if (Input.GetMouseButtonDown(0)) continueRequested = true;
         }
 
         private void HideAll()
