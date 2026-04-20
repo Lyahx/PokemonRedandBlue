@@ -154,6 +154,12 @@ namespace PokeRed.Battle
             yield return ShowMessage($"{target.DisplayName} fainted!");
         }
 
+        public IEnumerator HideBattle()
+        {
+            HideAll();
+            yield return null;
+        }
+
         public IEnumerator AskPlayerAction(PokemonInstance active, Action<BattleAction> onChoice)
         {
             while (true)

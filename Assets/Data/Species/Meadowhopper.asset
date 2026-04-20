@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 713803dae1279984d9c37fd25b5bd3b8, type: 3}
+  m_Name: Meadowhopper
+  m_EditorClassIdentifier: Assembly-CSharp::PokeRed.Pokemon.PokemonData
+  speciesName: Meadowhopper
+  dexNumber: 10
+  type1: 1
+  type2: 0
+  baseHP: 40
+  baseAtk: 55
+  baseDef: 40
+  baseSpAtk: 20
+  baseSpDef: 35
+  baseSpeed: 90
+  maxExp: 1000000
+  catchRate: 255
+  baseExpYield: 56
+  learnset:
+  - level: 1
+    move: {fileID: 11400000, guid: 931d7936b98bc8440a067c4c2f526032, type: 2}
+  - level: 1
+    move: {fileID: 11400000, guid: d47f979193ceea346ada1a65540eec47, type: 2}
+  frontSprite: {fileID: 0}
+  backSprite: {fileID: 0}
+  cry: {fileID: 0}

@@ -129,6 +129,7 @@ namespace PokeRed.Battle
                 }
             }
 
+            if (ui != null) yield return ui.HideBattle();
             EndBattle();
         }
 
