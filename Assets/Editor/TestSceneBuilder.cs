@@ -38,7 +38,7 @@ namespace PokeRed.EditorTools
             var signSprite   = GetOrCreateSquareSprite("sign",   new Color(0.70f, 0.50f, 0.20f));
 
             int fixedCount = 0;
-            foreach (var rend in Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            foreach (var rend in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 string n = rend.gameObject.name.ToLowerInvariant();
                 Sprite assign = null;
@@ -148,7 +148,7 @@ namespace PokeRed.EditorTools
 
             // Verify every SpriteRenderer actually got a sprite before persisting.
             int missingSprites = 0;
-            foreach (var rend in Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            foreach (var rend in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (rend.sprite == null)
                 {
