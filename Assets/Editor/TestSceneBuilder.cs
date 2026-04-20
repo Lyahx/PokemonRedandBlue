@@ -49,8 +49,7 @@ namespace PokeRed.EditorTools
 
                 if (assign != null && rend.sprite != assign)
                 {
-                    rend.sprite = assign;
-                    EditorUtility.SetDirty(rend);
+                    AssignSprite(rend, assign, rend.gameObject.name);
                     fixedCount++;
                 }
             }
@@ -128,7 +127,7 @@ namespace PokeRed.EditorTools
             sign.transform.position = new Vector3(-3, 2, 0);
             sign.layer = interactableLayer;
             var signRend = sign.AddComponent<SpriteRenderer>();
-            signRend.sprite = signSprite;
+            AssignSprite(signRend, signSprite, sign.name);
             var signCol = sign.AddComponent<BoxCollider2D>();
             signCol.isTrigger = false;
             var signScript = sign.AddComponent<SignInteractable>();
