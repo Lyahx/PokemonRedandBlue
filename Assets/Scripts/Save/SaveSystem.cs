@@ -44,6 +44,12 @@ namespace PokeRed.Save
             foreach (var mon in gm.PlayerParty.members)
                 data.party.Add(ToSaved(mon));
 
+            foreach (var slot in gm.Bag.slots)
+            {
+                if (slot.item == null) continue;
+                data.bag.Add(new SavedItem { itemAssetName = slot.item.name, count = slot.count });
+            }
+
             File.WriteAllText(Path, JsonUtility.ToJson(data, true));
             Debug.Log($"Saved → {Path}");
         }
@@ -65,6 +71,13 @@ namespace PokeRed.Save
             {
                 var restored = FromSaved(sp);
                 if (restored != null) gm.PlayerParty.members.Add(restored);
+            }
+
+            gm.Bag.slots.Clear();
+            foreach (var si in data.bag)
+            {
+                var item = registry != null ? registry.FindItem(si.itemAssetName) : null;
+                if (item != null) gm.Bag.Add(item, si.count);
             }
 
             if (player != null) player.position = new Vector3(data.posX, data.posY, player.position.z);

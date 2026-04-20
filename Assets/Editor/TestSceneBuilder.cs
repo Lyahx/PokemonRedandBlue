@@ -147,14 +147,29 @@ namespace PokeRed.EditorTools
             debugGO.AddComponent<DebugBootstrap>();
             debugGO.AddComponent<BattleTrigger>();
 
+            // Verify every SpriteRenderer actually got a sprite before persisting.
+            int missingSprites = 0;
+            foreach (var rend in Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            {
+                if (rend.sprite == null)
+                {
+                    Debug.LogError($"[PokeRed] SpriteRenderer on '{rend.gameObject.name}' has no sprite after build.");
+                    missingSprites++;
+                }
+            }
+
+            EditorSceneManager.MarkAllScenesDirty();
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
 
             // Make sure the scene is in Build Settings so warp/load works later.
             AddSceneToBuildSettings(ScenePath);
 
-            Debug.Log($"[PokeRed] Test scene built at {ScenePath}. Press Play!");
-            EditorUtility.DisplayDialog("PokeRed", "Test sahnesi hazır!\n\nWASD/Oklar → hareket\nZ/Enter → etkileşim\nB → vahşi savaş", "Tamam");
+            string summary = missingSprites == 0
+                ? $"Test sahnesi hazır!\n\nWASD/Oklar → hareket\nZ/Enter → etkileşim\nB → vahşi savaş"
+                : $"Sahne kuruldu ama {missingSprites} SpriteRenderer boş — 'Re-apply Sprite References' menüsünü çalıştır.";
+            Debug.Log($"[PokeRed] Test scene built at {ScenePath}. Missing sprites: {missingSprites}");
+            EditorUtility.DisplayDialog("PokeRed", summary, "Tamam");
         }
 
         // ---------- Builders ----------
@@ -187,7 +202,7 @@ namespace PokeRed.EditorTools
             go.transform.position = new Vector3(pos.x, pos.y, 0);
             go.layer = layer;
             var rend = go.AddComponent<SpriteRenderer>();
-            rend.sprite = sprite;
+            AssignSprite(rend, sprite, name);
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one * 0.9f;
             var rb = go.AddComponent<Rigidbody2D>();
@@ -202,8 +217,22 @@ namespace PokeRed.EditorTools
             go.transform.position = new Vector3(pos.x, pos.y, 0);
             go.layer = layer;
             var rend = go.AddComponent<SpriteRenderer>();
-            rend.sprite = sprite;
+            AssignSprite(rend, sprite, go.name);
             go.AddComponent<BoxCollider2D>();
+        }
+
+        private static void AssignSprite(SpriteRenderer rend, Sprite sprite, string owner)
+        {
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[PokeRed] '{owner}' created without a sprite — load probably failed.");
+                return;
+            }
+            rend.sprite = sprite;
+            var so = new SerializedObject(rend);
+            so.FindProperty("m_Sprite").objectReferenceValue = sprite;
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(rend);
         }
 
         // ---------- Dialogue Canvas ----------

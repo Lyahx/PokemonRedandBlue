@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using PokeRed.Core;
+using PokeRed.Items;
 using PokeRed.Pokemon;
 using UnityEngine;
 
@@ -18,6 +20,9 @@ namespace PokeRed.Battle
         private PokemonInstance activePlayer;
         private PokemonInstance activeEnemy;
         private bool trainerBattle;
+        private TrainerData trainer;
+        private List<PokemonInstance> trainerParty;
+        private int trainerPartyIndex;
         private BattleAction pendingAction;
         private bool hasAction;
 
@@ -33,7 +38,23 @@ namespace PokeRed.Battle
             playerParty   = party;
             activeEnemy   = wild;
             trainerBattle = false;
+            trainer       = null;
+            trainerParty  = null;
             activePlayer  = party.FirstUsable();
+            GameManager.Instance?.SetState(GameState.Battle);
+            StartCoroutine(Run());
+        }
+
+        public void StartTrainerBattle(Party party, TrainerData trainerData)
+        {
+            playerParty      = party;
+            trainer          = trainerData;
+            trainerParty     = trainerData.BuildParty();
+            if (trainerParty == null || trainerParty.Count == 0) return;
+            trainerPartyIndex = 0;
+            activeEnemy       = trainerParty[0];
+            trainerBattle     = true;
+            activePlayer      = party.FirstUsable();
             GameManager.Instance?.SetState(GameState.Battle);
             StartCoroutine(Run());
         }
@@ -52,19 +73,53 @@ namespace PokeRed.Battle
 
                 if (pendingAction.type == BattleActionType.Run)
                 {
+                    if (trainerBattle)
+                    {
+                        if (ui != null) yield return ui.ShowMessage("No running from a trainer battle!");
+                        continue;
+                    }
                     if (ui != null) yield return ui.ShowMessage("Got away safely!");
                     Phase = BattlePhase.Escaped;
                     break;
                 }
 
-                yield return ResolveTurn(pendingAction);
+                if (pendingAction.type == BattleActionType.UseItem && pendingAction.item != null)
+                {
+                    bool captured = false;
+                    yield return UseItemAction(pendingAction.item, used => captured = used);
+                    if (captured) { Phase = BattlePhase.Captured; break; }
+                    // Enemy still acts after item use
+                    if (activeEnemy != null && !activeEnemy.IsFainted)
+                    {
+                        var ea = ChooseEnemyAction();
+                        yield return PerformMove(activeEnemy, activePlayer, MoveFromAction(activeEnemy, ea));
+                    }
+                }
+                else
+                {
+                    yield return ResolveTurn(pendingAction);
+                }
 
-                if (activeEnemy.IsFainted)
+                if (activeEnemy != null && activeEnemy.IsFainted)
                 {
                     yield return HandleEnemyFaint();
+
+                    if (trainerBattle && TryAdvanceTrainer())
+                    {
+                        if (ui != null) yield return ui.ShowMessage($"{trainer.trainerName} sent out {activeEnemy.DisplayName}!");
+                        continue;
+                    }
+
                     Phase = BattlePhase.Victory;
+                    if (trainerBattle && trainer != null)
+                    {
+                        int reward = trainer.RewardMoney();
+                        if (GameManager.Instance != null) GameManager.Instance.Money += reward;
+                        if (ui != null) yield return ui.ShowMessage($"You got ₽{reward} for winning!");
+                    }
                     break;
                 }
+
                 if (activePlayer.IsFainted)
                 {
                     yield return HandlePlayerFaint();
@@ -75,6 +130,69 @@ namespace PokeRed.Battle
             }
 
             EndBattle();
+        }
+
+        private bool TryAdvanceTrainer()
+        {
+            if (trainerParty == null) return false;
+            trainerPartyIndex++;
+            while (trainerPartyIndex < trainerParty.Count)
+            {
+                if (!trainerParty[trainerPartyIndex].IsFainted)
+                {
+                    activeEnemy = trainerParty[trainerPartyIndex];
+                    return true;
+                }
+                trainerPartyIndex++;
+            }
+            return false;
+        }
+
+        private IEnumerator UseItemAction(ItemData item, System.Action<bool> onCaptured)
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.Bag.Consume(item, 1);
+
+            if (ui != null) yield return ui.ShowMessage($"Used {item.itemName}.");
+
+            if (item.category == ItemCategory.Ball)
+            {
+                if (trainerBattle)
+                {
+                    if (ui != null) yield return ui.ShowMessage("You can't catch a trainer's Pokémon!");
+                    onCaptured(false); yield break;
+                }
+                bool caught = CatchCalculator.TryCatch(activeEnemy, item.ballModifier, out int shakes);
+                if (ui != null) yield return ui.ShowMessage(ShakeMessage(shakes, caught));
+                if (caught)
+                {
+                    playerParty.Add(activeEnemy);
+                    onCaptured(true); yield break;
+                }
+            }
+            else if (item.category == ItemCategory.Potion && item.healAmount > 0)
+            {
+                int before = activePlayer.currentHP;
+                activePlayer.Heal(item.healAmount);
+                if (ui != null)
+                {
+                    yield return ui.ShowHPChange(activePlayer, before, activePlayer.currentHP);
+                    yield return ui.ShowMessage($"{activePlayer.DisplayName} restored {activePlayer.currentHP - before} HP.");
+                }
+            }
+            onCaptured(false);
+        }
+
+        private static string ShakeMessage(int shakes, bool caught)
+        {
+            if (caught) return "Gotcha! It was caught!";
+            return shakes switch
+            {
+                0 => "Oh no! It broke free!",
+                1 => "Aww! It appeared to be caught!",
+                2 => "Aargh! Almost had it!",
+                _ => "Shoot! It was so close too!"
+            };
         }
 
         private IEnumerator ResolveTurn(BattleAction playerAction)

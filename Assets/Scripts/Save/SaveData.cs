@@ -24,6 +24,13 @@ namespace PokeRed.Save
     }
 
     [Serializable]
+    public class SavedItem
+    {
+        public string itemAssetName;
+        public int    count;
+    }
+
+    [Serializable]
     public class SaveData
     {
         public string playerName = "RED";
@@ -31,6 +38,7 @@ namespace PokeRed.Save
         public string sceneName  = "PalletTown";
         public float  posX, posY;
         public List<SavedPokemon> party = new();
+        public List<SavedItem>    bag   = new();
         public long   savedAtTicks;
     }
 }

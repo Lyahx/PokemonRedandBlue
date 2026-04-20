@@ -1,3 +1,5 @@
+using PokeRed.Items;
+
 namespace PokeRed.Battle
 {
     public enum BattleActionType { Fight, SwitchPokemon, UseItem, Run }
@@ -7,5 +9,6 @@ namespace PokeRed.Battle
         public BattleActionType type;
         public int moveIndex;
         public int switchIndex;
+        public ItemData item;
     }
 }
