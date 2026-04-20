@@ -38,6 +38,9 @@ namespace PokeRed.Battle
 
             while (GameManager.Instance.State == GameState.Battle) yield return null;
 
+            bool playerWon = GameManager.Instance.PlayerParty.HasUsable;
+            if (!playerWon) yield break; // Player blacked out; allow a rematch on reload.
+
             defeated = true;
 
             if (DialogueManager.Instance != null && trainer.defeatedByLines.Count > 0)

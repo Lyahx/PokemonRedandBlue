@@ -197,6 +197,21 @@ namespace PokeRed.EditorTools
             return npc;
         }
 
+        public static GameObject CreateTrainerNPC(string name, Sprite sprite, Vector2 pos,
+                                                   TrainerData trainerAsset, int interactableLayer)
+        {
+            var go = new GameObject(name);
+            go.transform.position = new Vector3(pos.x, pos.y, 0);
+            go.layer = interactableLayer;
+            var rend = go.AddComponent<SpriteRenderer>();
+            AssignSprite(rend, sprite, name);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one * 0.9f;
+            var enc = go.AddComponent<TrainerEncounter>();
+            SetField(enc, "trainer", trainerAsset);
+            return go;
+        }
+
         public static GameObject CreateSign(Sprite sprite, Vector2 pos, string[] lines, int interactableLayer)
         {
             var go = new GameObject($"Sign_{pos.x}_{pos.y}");

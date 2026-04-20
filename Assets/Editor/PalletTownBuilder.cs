@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using PokeRed.Battle;
 using PokeRed.Core;
 using PokeRed.DebugTools;
 using UnityEditor;
@@ -90,6 +91,18 @@ namespace PokeRed.EditorTools
                     "Bir gün ben de buradan ayrılıp usta olacağım!",
                     "Ama önce çimenlere bakmalıyım…"
                 }, wander: true, 1 << solidLayer, interactableLayer);
+
+            // ---------- Trainer NPC (sample rival) ----------
+            var rivalTrainer = AssetDatabase.LoadAssetAtPath<TrainerData>("Assets/Data/Trainers/RivalYoungster.asset");
+            if (rivalTrainer != null)
+            {
+                var rivalSprite = GetOrCreateSolidSprite("npc_rival", new Color(0.95f, 0.75f, 0.30f));
+                CreateTrainerNPC("NPC_Rival", rivalSprite, new Vector2(3, 3), rivalTrainer, interactableLayer);
+            }
+            else
+            {
+                Debug.LogWarning("[PokeRed] RivalYoungster trainer asset missing — run Generate Sample Data first.");
+            }
 
             // ---------- Sign ----------
             CreateSign(signSprite, new Vector2(-1, -4), new[] {

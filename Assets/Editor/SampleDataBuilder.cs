@@ -89,6 +89,24 @@ namespace PokeRed.EditorTools
                     (meadowhopper, 2, 4, 10),
                 });
 
+            // ----- Trainers -----
+            var rivalTrainer = CreateTrainer("RivalYoungster", "Genç Rakip", prizeMoneyPerLevel: 20,
+                preBattle: new[] {
+                    "Hey! Sen de mi yola çıkıyorsun?",
+                    "O zaman önce beni yenmen gerekiyor!"
+                },
+                defeatedLines: new[] {
+                    "Hmph, şanslıydın sadece.",
+                    "Bir dahaki sefere hazır olacağım!"
+                },
+                lossLines: new[] {
+                    "Ha! Henüz hazır değilmişsin, çırak!"
+                },
+                party: new[] {
+                    (meadowhopper, 3),
+                    (sparkmouse, 3)
+                });
+
             // ----- Data registry (for save system) -----
             var registry = ScriptableObject.CreateInstance<PokemonDataRegistry>();
             registry.species.AddRange(new[] { sproutling, kindling, droplet, meadowhopper, sparkmouse });
@@ -151,6 +169,22 @@ namespace PokeRed.EditorTools
                 e.slots.Add(new EncounterSlot { species = s.species, minLevel = s.minLvl, maxLevel = s.maxLvl, weight = s.weight });
             WriteAsset(e, $"{EncountersDir}/{ToFileName(name)}.asset");
             return e;
+        }
+
+        private static TrainerData CreateTrainer(string assetName, string displayName, int prizeMoneyPerLevel,
+            string[] preBattle, string[] defeatedLines, string[] lossLines,
+            (PokemonData species, int level)[] party)
+        {
+            var t = ScriptableObject.CreateInstance<TrainerData>();
+            t.trainerName = displayName;
+            t.prizeMoneyPerLevel = prizeMoneyPerLevel;
+            t.preBattleLines.AddRange(preBattle);
+            t.defeatedByLines.AddRange(defeatedLines);
+            t.lossLines.AddRange(lossLines);
+            foreach (var (species, level) in party)
+                t.party.Add(new TrainerPokemon { species = species, level = level });
+            WriteAsset(t, $"{TrainersDir}/{ToFileName(assetName)}.asset");
+            return t;
         }
 
         // ---------- Infra ----------
